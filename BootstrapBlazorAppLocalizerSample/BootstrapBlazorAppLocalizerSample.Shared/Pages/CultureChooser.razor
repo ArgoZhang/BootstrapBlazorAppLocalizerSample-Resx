@@ -1,0 +1,39 @@
+﻿@inherits BootstrapComponentBase
+@inject IOptions<BootstrapBlazorOptions> BootstrapOptions
+@inject NavigationManager NavigationManager
+
+<div @attributes="@AdditionalAttributes" class="@ClassString">
+    <label>请选择语言：</label>
+    <Select Value="@SelectedCulture" OnSelectedItemChanged="@SetCulture">
+        <Options>
+            @foreach (var kv in BootstrapOptions.Value.GetSupportedCultures())
+            {
+                <SelectOption Text="@kv.NativeName" Value="@kv.Name" />
+            }
+        </Options>
+    </Select>
+</div>
+
+@code{
+    private string ClassString => CssBuilder.Default("culture-selector")
+        .AddClassFromAttributes(AdditionalAttributes)
+        .Build();
+
+    private string SelectedCulture { get; set; } = CultureInfo.CurrentUICulture.Name;
+
+    private Task SetCulture(SelectedItem item)
+    {
+        // 使用 api 方式 适用于 Server-Side 模式
+        if (SelectedCulture != item.Value)
+        {
+            var culture = item.Value;
+            var uri = new Uri(NavigationManager.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+            var query = $"?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(uri)}";
+
+            // use a path that matches your culture redirect controller from the previous steps
+            NavigationManager.NavigateTo("/Culture/SetCulture" + query, forceLoad: true);
+        }
+
+        return Task.CompletedTask;
+    }
+}
